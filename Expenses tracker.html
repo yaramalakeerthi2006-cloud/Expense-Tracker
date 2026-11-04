@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker</title>
+
+<style>
+:root {
+  --bg: #0b1020;
+  --card: #141e33;
+  --border: #29364e;
+  --text: #eef4ff;
+  --muted: #a9b7ce;
+  --teal: #77e0c3;
+  --red: #ff8585;
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+.container {
+  width: 92%;
+  max-width: 1100px;
+  margin: auto;
+}
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 0;
+}
+header h1 {
+  color: var(--teal);
+  font-size: 1.7rem;
+}
+header p, .muted {
+  color: var(--muted);
+}
+main {
+  padding: 30px 0 50px;
+}
+h2 {
+  margin-bottom: 16px;
+}
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 22px;
+  min-width: 0;
+}
+.card h3 {
+  color: var(--muted);
+  font-size: .95rem;
+  font-weight: normal;
+}
+.amount {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-weight: bold;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.income { color: var(--teal); }
+.expense { color: var(--red); }
+.layout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+form {
+  display: grid;
+  gap: 13px;
+}
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: .9rem;
+}
+input, select {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 8px;
+  font: inherit;
+}
+input:focus, select:focus {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 11px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+.primary {
+  background: var(--teal);
+  color: #08151a;
+  font-weight: bold;
+}
+.primary:hover { filter: brightness(.92); }
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.toolbar input { flex: 1; min-width: 0; }
+.toolbar select { width: auto; max-width: 45%; }
+.transactions {
+  display: grid;
+  gap: 10px;
+}
+.transaction {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #0f182a;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+}
+.transaction h4 { overflow-wrap: anywhere; }
+.transaction small { color: var(--muted); }
+.transaction-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+.delete-btn {
+  background: transparent;
+  color: var(--red);
+  padding: 3px 0;
+  font-size: .85rem;
+}
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 25px 5px;
+}
+.chart {
+  display: flex;
+  height: 175px;
+  gap: 22px;
+  align-items: end;
+  justify-content: center;
+  padding: 18px 5px 0;
+}
+.bar-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  height: 100%;
+  gap: 7px;
+  width: 75px;
+  min-width: 0;
+}
+.bar {
+  width: 42px;
+  min-height: 3px;
+  max-height: 115px;
+  border-radius: 7px 7px 2px 2px;
+  background: var(--teal);
+  transition: height .25s;
+}
+.bar-label {
+  color: var(--muted);
+  font-size: .8rem;
+}
+.bar-value {
+  font-size: .78rem;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+footer {
+  text-align: center;
+  padding: 20px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+}
+@media (max-width: 800px) {
+  .layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 550px) {
+  .dashboard { grid-template-columns: 1fr; }
+  .card { padding: 17px; }
+  .toolbar { flex-direction: column; }
+  .toolbar select { width: 100%; max-width: 100%; }
+  .transaction { padding: 11px; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="container">
+    <h1>💰 Expense Tracker</h1>
+    <p>Track your money. Understand your spending.</p>
+  </div>
+</header>
+
+<main class="container">
+
+  <section class="dashboard">
+    <div class="card">
+      <h3>Total Income</h3>
+      <div class="amount income" id="totalIncome">₹0.00</div>
+    </div>
+    <div class="card">
+      <h3>Total Expenses</h3>
+      <div class="amount expense" id="totalExpense">₹0.00</div>
+    </div>
+    <div class="card">
+      <h3>Available Balance</h3>
+      <div class="amount" id="balance">₹0.00</div>
+    </div>
+  </section>
+
+  <section class="layout">
+
+    <div class="card">
+      <h2>Add Transaction</h2>
+
+      <form id="transactionForm">
+        <div>
+          <label for="title">Transaction name</label>
+          <input id="title" maxlength="80"
+            placeholder="e.g. Grocery shopping" required>
+        </div>
+
+        <div>
+          <label for="amount">Amount (₹)</label>
+          <input id="amount" type="number" min="0.01"
+            max="1000000000000" step="0.01"
+            placeholder="Enter amount" required>
+        </div>
+
+        <div>
+          <label for="type">Transaction type</label>
+          <select id="type">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="category">Category</label>
+          <select id="category">
+            <option>Food</option>
+            <option>Transport</option>
+            <option>Shopping</option>
+            <option>Education</option>
+            <option>Bills</option>
+            <option>Entertainment</option>
+            <option>Health</option>
+            <option>Salary</option>
+            <option>Freelance</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="date">Date</label>
+          <input id="date" type="date" required>
+        </div>
+
+        <button class="primary" type="submit">
+          + Add Transaction
+        </button>
+      </form>
+    </div>
+
+    <div>
+      <section class="card" style="margin-bottom:20px">
+        <h2>Spending Overview</h2>
+        <p class="muted">Income compared with expenses</p>
+        <div class="chart">
+          <div class="bar-column">
+            <span class="bar-value" id="incomeBarValue">₹0</span>
+            <div class="bar" id="incomeBar" style="height:3px"></div>
+            <span class="bar-label">Income</span>
+          </div>
+          <div class="bar-column">
+            <span class="bar-value" id="expenseBarValue">₹0</span>
+            <div class="bar" id="expenseBar"
+              style="height:3px;background:var(--red)"></div>
+            <span class="bar-label">Expenses</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Transactions</h2>
+        <div class="toolbar">
+          <input id="search" type="search"
+            placeholder="Search transactions...">
+          <select id="filter">
+            <option value="all">All transactions</option>
+            <option value="income">Income only</option>
+            <option value="expense">Expenses only</option>
+          </select>
+        </div>
+
+        <div id="transactionList" class="transactions"></div>
+      </section>
+    </div>
+
+  </section>
+</main>
+
+<footer>
+  <p>Expense Tracker · Built with HTML, CSS and JavaScript</p>
+</footer>
+
+<script>
+const form = document.getElementById("transactionForm");
+const list = document.getElementById("transactionList");
+const search = document.getElementById("search");
+const filter = document.getElementById("filter");
+
+const STORAGE_KEY = "personalExpenseTracker_v1";
+
+let transactions = [];
+
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  if (Array.isArray(saved)) {
+    transactions = saved.filter(item =>
+      item &&
+      typeof item.id === "string" &&
+      typeof item.title === "string" &&
+      Number.isFinite(item.amount) &&
+      item.amount > 0 &&
+      ["income", "expense"].includes(item.type) &&
+      typeof item.category === "string" &&
+      typeof item.date === "string"
+    );
+  }
+} catch (error) {
+  transactions = [];
+}
+
+document.getElementById("date").value =
+  new Date().toLocaleDateString("en-CA");
+
+function money(value) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2
+  }).format(value);
+}
+
+function saveTransactions() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+    return true;
+  } catch (error) {
+    alert("Could not save data in this browser. Check storage settings.");
+    return false;
+  }
+}
+
+form.addEventListener("submit", function(event) {
+  event.preventDefault();
+
+  const title = document.getElementById("title").value.trim();
+  const amount = Number(document.getElementById("amount").value);
+  const type = document.getElementById("type").value;
+  const category = document.getElementById("category").value;
+  const date = document.getElementById("date").value;
+
+  if (!title || !Number.isFinite(amount) ||
+      amount <= 0 || amount > 1000000000000 || !date) {
+    alert("Please enter a valid name, amount and date.");
+    return;
+  }
+
+  const transaction = {
+    id: crypto.randomUUID
+      ? crypto.randomUUID()
+      : Date.now().toString() + Math.random().toString(16).slice(2),
+    title,
+    amount: Math.round(amount * 100) / 100,
+    type,
+    category,
+    date
+  };
+
+  transactions.unshift(transaction);
+
+  if (!saveTransactions()) {
+    transactions.shift();
+    return;
+  }
+
+  form.reset();
+  document.getElementById("date").value =
+    new Date().toLocaleDateString("en-CA");
+
+  render();
+});
+
+function render() {
+  const income = transactions
+    .filter(item => item.type === "income")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const expenses = transactions
+    .filter(item => item.type === "expense")
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const balance = income - expenses;
+
+  document.getElementById("totalIncome").textContent = money(income);
+  document.getElementById("totalExpense").textContent = money(expenses);
+
+  const balanceElement = document.getElementById("balance");
+  balanceElement.textContent = money(balance);
+  balanceElement.style.color =
+    balance < 0 ? "var(--red)" : "var(--teal)";
+
+  document.getElementById("incomeBarValue").textContent = money(income);
+  document.getElementById("expenseBarValue").textContent = money(expenses);
+
+  const max = Math.max(income, expenses, 1);
+  document.getElementById("incomeBar").style.height =
+    Math.max(3, income / max * 115) + "px";
+  document.getElementById("expenseBar").style.height =
+    Math.max(3, expenses / max * 115) + "px";
+
+  const query = search.value.trim().toLowerCase();
+  const selectedType = filter.value;
+
+  const visible = transactions.filter(item => {
+    const matchesSearch =
+      item.title.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query);
+
+    const matchesType =
+      selectedType === "all" || item.type === selectedType;
+
+    return matchesSearch && matchesType;
+  });
+
+  list.replaceChildren();
+
+  if (visible.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty";
+    empty.textContent = transactions.length === 0
+      ? "No transactions yet. Add your first transaction!"
+      : "No matching transactions found.";
+    list.appendChild(empty);
+    return;
+  }
+
+  visible.forEach(item => {
+    const row = document.createElement("article");
+    row.className = "transaction";
+
+    const details = document.createElement("div");
+    const name = document.createElement("h4");
+    name.textContent = item.title;
+
+    const info = document.createElement("small");
+    info.textContent = item.category + " · " + item.date;
+
+    details.append(name, info);
+
+    const right = document.createElement("div");
+    right.className = "transaction-right";
+
+    const amount = document.createElement("div");
+    amount.className = item.type === "income" ? "income" : "expense";
+    amount.textContent =
+      (item.type === "income" ? "+ " : "− ") + money(item.amount);
+
+    const remove = document.createElement("button");
+    remove.className = "delete-btn";
+    remove.type = "button";
+    remove.textContent = "Delete";
+    remove.setAttribute("aria-label", "Delete " + item.title);
+
+    remove.addEventListener("click", () => {
+      if (!confirm("Delete this transaction?")) return;
+
+      const previous = transactions;
+      transactions = transactions.filter(tx => tx.id !== item.id);
+
+      if (saveTransactions()) {
+        render();
+      } else {
+        transactions = previous;
+        render();
+      }
+    });
+
+    right.append(amount, remove);
+    row.append(details, right);
+    list.appendChild(row);
+  });
+}
+
+search.addEventListener("input", render);
+filter.addEventListener("change", render);
+
+render();
+</script>
+</body>
+</html>
